@@ -1,9 +1,11 @@
+import DashboardLayout from '@/components/DashboardLayout';
+import MainContent from '@/components/MainContent';
+
+// PUBLIC_INTERFACE
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white flex items-center justify-center">
-      <h1 className="text-black text-4xl font-light">
-        frontend is being generated
-      </h1>
-    </main>
+    <DashboardLayout>
+      <MainContent />
+    </DashboardLayout>
   );
 }

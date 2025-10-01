@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Minimal Next.js App",
-  description: "Ultra-minimal Next.js application",
+  title: "Unified Jira & Confluence Dashboard",
+  description: "Connect and manage your Atlassian Jira and Confluence accounts in one unified dashboard",
 };
 
+// PUBLIC_INTERFACE
 export default function RootLayout({
   children,
 }: {

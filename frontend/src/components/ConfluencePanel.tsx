@@ -12,7 +12,6 @@ import { useApp } from '../contexts/AppContext';
 export default function ConfluencePanel() {
   /**
    * Confluence panel component that handles authentication and displays space data.
-   * Uses the new authentication and app contexts for state management.
    */
   const [authMethod, setAuthMethod] = useState<'oauth' | 'token'>('oauth');
   const [selectedSpaceKey, setSelectedSpaceKey] = useState<string | null>(null);
@@ -22,7 +21,6 @@ export default function ConfluencePanel() {
 
   const handleAuthSuccess = async () => {
     try {
-      // Load Confluence spaces after successful authentication
       await app.loadConfluenceSpaces();
     } catch (error) {
       console.error('Failed to load spaces after authentication:', error);
@@ -65,7 +63,6 @@ export default function ConfluencePanel() {
     setViewMode('spaces');
   };
 
-  // Load spaces when authenticated
   useEffect(() => {
     if (auth.state.confluence.isAuthenticated && app.state.confluence.spaces.length === 0) {
       app.loadConfluenceSpaces();
@@ -86,7 +83,7 @@ export default function ConfluencePanel() {
           </div>
         </div>
 
-        <AuthStatus 
+        <AuthStatus
           service="confluence"
           isConnected={auth.state.confluence.isAuthenticated}
           userInfo={auth.state.confluence.user || undefined}
@@ -123,7 +120,7 @@ export default function ConfluencePanel() {
         </p>
       </div>
 
-      <AuthStatus 
+      <AuthStatus
         service="confluence"
         isConnected={auth.state.confluence.isAuthenticated}
         onDisconnect={handleDisconnect}
@@ -136,8 +133,9 @@ export default function ConfluencePanel() {
             <button
               onClick={auth.clearConfluenceError}
               className="text-red-700 hover:text-red-900 ml-2"
+              aria-label="Clear error"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -146,7 +144,6 @@ export default function ConfluencePanel() {
       )}
 
       <div className="space-y-6">
-        {/* Authentication Method Selector */}
         <div className="flex space-x-4 border-b border-gray-200">
           <button
             className={`pb-2 px-1 border-b-2 transition-colors ${
@@ -171,13 +168,13 @@ export default function ConfluencePanel() {
         </div>
 
         {authMethod === 'oauth' ? (
-          <OAuthPanel 
+          <OAuthPanel
             service="confluence"
             onSuccess={handleAuthSuccess}
             onError={handleAuthError}
           />
         ) : (
-          <ApiTokenForm 
+          <ApiTokenForm
             service="confluence"
             onSuccess={handleAuthSuccess}
             onError={handleAuthError}

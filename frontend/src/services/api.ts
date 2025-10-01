@@ -24,31 +24,16 @@ export interface OAuthCallbackRequest {
   state: string;
 }
 
-export interface HTTPValidationError {
-  detail: Array<{
-    loc: (string | number)[];
-    msg: string;
-    type: string;
-  }>;
-}
-
 // Jira types
 export interface JiraProject {
   id: string;
   key: string;
   name: string;
   projectTypeKey: string;
-  simplified: boolean;
-  style: string;
-  isPrivate: boolean;
+  simplified?: boolean;
+  style?: string;
+  isPrivate?: boolean;
   description?: string;
-  url?: string;
-  avatarUrls?: Record<string, string>;
-  projectCategory?: {
-    id: string;
-    name: string;
-    description: string;
-  };
 }
 
 // Confluence types
@@ -57,20 +42,16 @@ export interface ConfluenceSpace {
   key: string;
   name: string;
   type: string;
-  status: string;
   description?: {
     plain: {
       value: string;
-      representation: string;
+      representation?: string;
     };
   };
   homepage?: {
     id: string;
-    type: string;
-    status: string;
     title: string;
   };
-  _links?: Record<string, string>;
 }
 
 export interface ConfluenceContent {
@@ -84,21 +65,21 @@ export interface ConfluenceContent {
     name: string;
     type: string;
   };
+  // Optional history metadata present in some responses
   history?: {
-    latest: boolean;
-    createdBy: {
-      type: string;
-      displayName: string;
-      userKey: string;
-      accountId: string;
+    createdBy?: {
+      type?: string;
+      displayName?: string;
+      userKey?: string;
+      accountId?: string;
     };
-    createdDate: string;
+    createdDate?: string;
+    latest?: boolean;
   };
   version?: {
-    number: number;
-    when: string;
+    number?: number;
+    when?: string;
   };
-  _links?: Record<string, string>;
 }
 
 // API Client Configuration
@@ -140,9 +121,7 @@ export interface ApiResponse<T = unknown> {
 export class ApiClient {
   /**
    * Centralized API client for communicating with the backend.
-   * Handles authentication, error handling, and provides typed methods for all API endpoints.
    */
-  
   private config: Required<ApiClientConfig>;
 
   constructor(config: ApiClientConfig) {
@@ -158,7 +137,7 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.config.baseURL}${endpoint}`;
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
@@ -180,11 +159,13 @@ export class ApiClient {
         try {
           errorData = await response.json();
         } catch {
-          // Response is not JSON
+          // ignore
         }
 
-        const message = (typeof errorData.message === 'string' ? errorData.message : '') ||
-                       (typeof errorData.detail === 'string' ? errorData.detail : '') ||
+        type ErrorShape = { message?: unknown; detail?: unknown };
+        const errObj = errorData as ErrorShape;
+        const message = (typeof errObj.message === 'string' ? errObj.message : '') ||
+                       (typeof errObj.detail === 'string' ? errObj.detail : '') ||
                        `HTTP ${response.status}: ${response.statusText}`;
 
         throw new ApiError(
@@ -196,7 +177,7 @@ export class ApiClient {
       }
 
       const data = await response.json();
-      
+
       return {
         data,
         status: response.status,
@@ -328,9 +309,10 @@ export class ApiClient {
   }
 }
 
-// Default API client instance
+// Default API client instance using env
 const defaultConfig: ApiClientConfig = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://vscode-internal-17271-beta.beta01.cloud.kavia.ai:3001',
+  // Use env variable; orchestrator will set this. See .env.example
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000',
   timeout: 30000,
   withCredentials: true,
 };

@@ -26,8 +26,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         className="mobile-menu-button"
         onClick={toggleMobileMenu}
         aria-label="Toggle navigation menu"
+        aria-expanded={isMobileMenuOpen}
+        aria-controls="sidebar"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" role="img" aria-hidden="true">
           <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
         </svg>
       </button>
@@ -39,8 +41,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       />
 
       {/* Sidebar */}
-      <Sidebar 
-        isMobileOpen={isMobileMenuOpen} 
+      <Sidebar
+        isMobileOpen={isMobileMenuOpen}
         onCloseMobile={closeMobileMenu}
       />
 

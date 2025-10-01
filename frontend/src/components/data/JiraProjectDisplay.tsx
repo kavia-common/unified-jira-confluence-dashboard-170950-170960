@@ -20,7 +20,6 @@ export default function JiraProjectDisplay({
 }: JiraProjectDisplayProps) {
   /**
    * Component for displaying Jira projects with enhanced UI and Ocean Professional theme styling.
-   * Includes loading states, error handling, and interactive project cards.
    */
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
@@ -45,7 +44,7 @@ export default function JiraProjectDisplay({
         </div>
         <div className="error-state">
           <div className="error-icon">
-            <svg className="h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
@@ -53,11 +52,8 @@ export default function JiraProjectDisplay({
           {onRefresh && (
             <button 
               onClick={onRefresh}
-              className="retry-button"
+              className="button button-primary"
             >
-              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
               Try Again
             </button>
           )}
@@ -75,7 +71,7 @@ export default function JiraProjectDisplay({
         </div>
         <div className="empty-state">
           <div className="empty-icon">
-            <svg className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
@@ -101,12 +97,10 @@ export default function JiraProjectDisplay({
           {onRefresh && (
             <button 
               onClick={onRefresh}
-              className="refresh-button"
+              className="button button-secondary"
               title="Refresh projects"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+              Refresh
             </button>
           )}
         </div>
@@ -138,7 +132,7 @@ export default function JiraProjectDisplay({
                   onClick={() => setExpandedProject(
                     expandedProject === project.id ? null : project.id
                   )}
-                  className="expand-button"
+                  className="button"
                   aria-label={expandedProject === project.id ? 'Collapse' : 'Expand'}
                 >
                   <svg 
@@ -148,18 +142,13 @@ export default function JiraProjectDisplay({
                     fill="none" 
                     viewBox="0 0 24 24" 
                     stroke="currentColor"
+                    aria-hidden="true"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
               </div>
             </div>
-
-            {project.description && (
-              <div className="data-card-content">
-                <p className="project-description">{project.description}</p>
-              </div>
-            )}
 
             {expandedProject === project.id && (
               <div className="data-card-expanded">
@@ -170,54 +159,24 @@ export default function JiraProjectDisplay({
                       <span className="expanded-value">{project.id}</span>
                     </div>
                     <div className="expanded-item">
-                      <span className="expanded-label">Project Key:</span>
+                      <span className="expanded-label">Key:</span>
                       <span className="expanded-value">{project.key}</span>
                     </div>
                     <div className="expanded-item">
                       <span className="expanded-label">Type:</span>
                       <span className="expanded-value">{project.projectTypeKey}</span>
                     </div>
-                    <div className="expanded-item">
-                      <span className="expanded-label">Style:</span>
-                      <span className="expanded-value">{project.style}</span>
-                    </div>
-                    <div className="expanded-item">
-                      <span className="expanded-label">Simplified:</span>
-                      <span className="expanded-value">{project.simplified ? 'Yes' : 'No'}</span>
-                    </div>
-                    <div className="expanded-item">
-                      <span className="expanded-label">Private:</span>
-                      <span className="expanded-value">{project.isPrivate ? 'Yes' : 'No'}</span>
-                    </div>
-                    {project.url && (
-                      <div className="expanded-item">
-                        <span className="expanded-label">URL:</span>
-                        <a 
-                          href={project.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="expanded-value text-blue-600 hover:underline"
-                        >
-                          View Project
-                        </a>
+                    {project.description && (
+                      <div className="expanded-item" style={{ gridColumn: '1 / -1' }}>
+                        <span className="expanded-label">Description:</span>
+                        <span className="expanded-value">{project.description}</span>
                       </div>
-                    )}
-                    {project.projectCategory && (
-                      <>
-                        <div className="expanded-item">
-                          <span className="expanded-label">Category:</span>
-                          <span className="expanded-value">{project.projectCategory.name}</span>
-                        </div>
-                        <div className="expanded-item">
-                          <span className="expanded-label">Category Description:</span>
-                          <span className="expanded-value">{project.projectCategory.description}</span>
-                        </div>
-                      </>
                     )}
                   </div>
                 </div>
               </div>
             )}
+
           </div>
         ))}
       </div>

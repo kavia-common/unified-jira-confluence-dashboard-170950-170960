@@ -12,7 +12,6 @@ import { useApp } from '../contexts/AppContext';
 export default function JiraPanel() {
   /**
    * Jira panel component that handles authentication and displays project data.
-   * Uses the new authentication and app contexts for state management.
    */
   const [authMethod, setAuthMethod] = useState<'oauth' | 'token'>('oauth');
   const auth = useAuth();
@@ -20,7 +19,6 @@ export default function JiraPanel() {
 
   const handleAuthSuccess = async () => {
     try {
-      // Load Jira projects after successful authentication
       await app.loadJiraProjects();
     } catch (error) {
       console.error('Failed to load projects after authentication:', error);
@@ -46,7 +44,6 @@ export default function JiraPanel() {
     }
   };
 
-  // Load projects when authenticated
   useEffect(() => {
     if (auth.state.jira.isAuthenticated && app.state.jira.projects.length === 0) {
       app.loadJiraProjects();
@@ -67,7 +64,7 @@ export default function JiraPanel() {
           </div>
         </div>
 
-        <AuthStatus 
+        <AuthStatus
           service="jira"
           isConnected={auth.state.jira.isAuthenticated}
           userInfo={auth.state.jira.user || undefined}
@@ -93,7 +90,7 @@ export default function JiraPanel() {
         </p>
       </div>
 
-      <AuthStatus 
+      <AuthStatus
         service="jira"
         isConnected={auth.state.jira.isAuthenticated}
         onDisconnect={handleDisconnect}
@@ -106,8 +103,9 @@ export default function JiraPanel() {
             <button
               onClick={auth.clearJiraError}
               className="text-red-700 hover:text-red-900 ml-2"
+              aria-label="Clear error"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -116,7 +114,6 @@ export default function JiraPanel() {
       )}
 
       <div className="space-y-6">
-        {/* Authentication Method Selector */}
         <div className="flex space-x-4 border-b border-gray-200">
           <button
             className={`pb-2 px-1 border-b-2 transition-colors ${
@@ -141,13 +138,13 @@ export default function JiraPanel() {
         </div>
 
         {authMethod === 'oauth' ? (
-          <OAuthPanel 
+          <OAuthPanel
             service="jira"
             onSuccess={handleAuthSuccess}
             onError={handleAuthError}
           />
         ) : (
-          <ApiTokenForm 
+          <ApiTokenForm
             service="jira"
             onSuccess={handleAuthSuccess}
             onError={handleAuthError}

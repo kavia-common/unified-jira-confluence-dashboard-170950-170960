@@ -22,7 +22,6 @@ export default function ConfluenceSpaceDisplay({
 }: ConfluenceSpaceDisplayProps) {
   /**
    * Component for displaying Confluence spaces with enhanced UI and Ocean Professional theme styling.
-   * Includes loading states, error handling, and interactive space cards.
    */
   const [expandedSpace, setExpandedSpace] = useState<string | null>(null);
 
@@ -47,7 +46,7 @@ export default function ConfluenceSpaceDisplay({
         </div>
         <div className="error-state">
           <div className="error-icon">
-            <svg className="h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
@@ -55,11 +54,8 @@ export default function ConfluenceSpaceDisplay({
           {onRefresh && (
             <button 
               onClick={onRefresh}
-              className="retry-button"
+              className="button button-primary"
             >
-              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
               Try Again
             </button>
           )}
@@ -77,7 +73,7 @@ export default function ConfluenceSpaceDisplay({
         </div>
         <div className="empty-state">
           <div className="empty-icon">
-            <svg className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </div>
@@ -103,12 +99,10 @@ export default function ConfluenceSpaceDisplay({
           {onRefresh && (
             <button 
               onClick={onRefresh}
-              className="refresh-button"
+              className="button button-secondary"
               title="Refresh spaces"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+              Refresh
             </button>
           )}
         </div>
@@ -140,20 +134,17 @@ export default function ConfluenceSpaceDisplay({
                   {onSpaceSelect && (
                     <button
                       onClick={() => onSpaceSelect(space.key)}
-                      className="action-button"
+                      className="button"
                       title="View space content"
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
+                      View
                     </button>
                   )}
                   <button
                     onClick={() => setExpandedSpace(
                       expandedSpace === space.id ? null : space.id
                     )}
-                    className="expand-button"
+                    className="button"
                     aria-label={expandedSpace === space.id ? 'Collapse' : 'Expand'}
                   >
                     <svg 
@@ -163,6 +154,7 @@ export default function ConfluenceSpaceDisplay({
                       fill="none" 
                       viewBox="0 0 24 24" 
                       stroke="currentColor"
+                      aria-hidden="true"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -174,39 +166,6 @@ export default function ConfluenceSpaceDisplay({
             {space.description?.plain?.value && (
               <div className="data-card-content">
                 <p className="space-description">{space.description.plain.value}</p>
-              </div>
-            )}
-
-            {expandedSpace === space.id && (
-              <div className="data-card-expanded">
-                <div className="expanded-content">
-                  <div className="expanded-grid">
-                    <div className="expanded-item">
-                      <span className="expanded-label">Space ID:</span>
-                      <span className="expanded-value">{space.id}</span>
-                    </div>
-                    <div className="expanded-item">
-                      <span className="expanded-label">Space Key:</span>
-                      <span className="expanded-value">{space.key}</span>
-                    </div>
-                    <div className="expanded-item">
-                      <span className="expanded-label">Type:</span>
-                      <span className="expanded-value">{space.type}</span>
-                    </div>
-                    {space.homepage && (
-                      <>
-                        <div className="expanded-item">
-                          <span className="expanded-label">Homepage:</span>
-                          <span className="expanded-value">{space.homepage.title}</span>
-                        </div>
-                        <div className="expanded-item">
-                          <span className="expanded-label">Homepage ID:</span>
-                          <span className="expanded-value">{space.homepage.id}</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
               </div>
             )}
           </div>

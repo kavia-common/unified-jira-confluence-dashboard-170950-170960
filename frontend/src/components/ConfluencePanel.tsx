@@ -1,102 +1,52 @@
 'use client';
 
-import { useState } from 'react';
-
-interface ConfluenceSpace {
-  id: string;
-  key: string;
-  name: string;
-  type: string;
-}
+import { useState, useEffect } from 'react';
+import OAuthPanel from './auth/OAuthPanel';
+import ApiTokenForm from './auth/ApiTokenForm';
+import AuthStatus from './auth/AuthStatus';
+import { useAuth, type AuthCredentials } from '../hooks/useAuth';
+import { useConfluenceData } from '../hooks/useConfluenceData';
 
 // PUBLIC_INTERFACE
 export default function ConfluencePanel() {
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [spaces, setSpaces] = useState<ConfluenceSpace[]>([]);
+  /**
+   * Confluence panel component that handles authentication and displays space data.
+   * Uses the new authentication components and state management hooks.
+   */
   const [authMethod, setAuthMethod] = useState<'oauth' | 'token'>('oauth');
-  const [formData, setFormData] = useState({
-    domain: '',
-    email: '',
-    apiToken: ''
-  });
-  const [error, setError] = useState<string | null>(null);
+  const { authState, login, logout, clearError } = useAuth('confluence');
+  const { spaces, isLoading: spacesLoading, fetchSpaces } = useConfluenceData();
 
-  const handleOAuthConnect = async () => {
-    setIsLoading(true);
-    setError(null);
-    
+  const handleAuthSuccess = async (data: AuthCredentials) => {
     try {
-      // This will be connected to the backend API
-      const response = await fetch('/api/auth/confluence/oauth/start');
-      const data = await response.json();
-      
-      if (data.auth_url) {
-        window.location.href = data.auth_url;
-      }
-    } catch (err) {
-      setError('Failed to start OAuth flow');
-      console.error('OAuth error:', err);
-    } finally {
-      setIsLoading(false);
+      await login('confluence', data);
+      await fetchSpaces();
+    } catch (error) {
+      console.error('Authentication success handler error:', error);
     }
   };
 
-  const handleTokenAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  const handleAuthError = (error: string) => {
+    console.error('Authentication error:', error);
+    // Error is automatically handled by the auth components
+  };
 
+  const handleDisconnect = async () => {
     try {
-      // This will be connected to the backend API
-      const response = await fetch('/api/auth/confluence/api-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        setIsConnected(true);
-        await fetchSpaces();
-      } else {
-        throw new Error('Authentication failed');
-      }
-    } catch (err) {
-      setError('Authentication failed. Please check your credentials.');
-      console.error('Token auth error:', err);
-    } finally {
-      setIsLoading(false);
+      await logout('confluence');
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 
-  const fetchSpaces = async () => {
-    try {
-      // This will be connected to the backend API
-      const response = await fetch('/api/confluence/spaces');
-      const data = await response.json();
-      setSpaces(data.spaces || []);
-    } catch (err) {
-      console.error('Failed to fetch spaces:', err);
+  // Fetch spaces when authenticated
+  useEffect(() => {
+    if (authState.isAuthenticated && spaces.length === 0) {
+      fetchSpaces();
     }
-  };
+  }, [authState.isAuthenticated, spaces.length, fetchSpaces]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleDisconnect = () => {
-    setIsConnected(false);
-    setSpaces([]);
-    setFormData({ domain: '', email: '', apiToken: '' });
-    setError(null);
-  };
-
-  if (isConnected) {
+  if (authState.isAuthenticated) {
     return (
       <div className="content-card">
         <div className="card-header">
@@ -104,32 +54,48 @@ export default function ConfluencePanel() {
             <div>
               <h2 className="card-title">Confluence Spaces</h2>
               <p className="card-description">
-                Connected to your Confluence workspace
+                View and manage your Confluence spaces
               </p>
             </div>
-            <button
-              onClick={handleDisconnect}
-              className="button button-secondary"
-            >
-              Disconnect
-            </button>
           </div>
         </div>
 
-        {spaces.length > 0 ? (
-          <div className="project-list">
+        <AuthStatus 
+          service="confluence"
+          isConnected={authState.isAuthenticated}
+          userInfo={authState.user || undefined}
+          onDisconnect={handleDisconnect}
+        />
+
+        {spacesLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="ml-2 text-gray-600">Loading spaces...</span>
+          </div>
+        ) : spaces.length > 0 ? (
+          <div className="project-list mt-6">
             {spaces.map((space) => (
               <div key={space.id} className="project-item">
                 <div className="project-name">{space.name}</div>
                 <div className="project-key">
                   {space.key} • {space.type}
                 </div>
+                {space.description?.plain?.value && (
+                  <p className="text-sm text-gray-500 mt-1">{space.description.plain.value}</p>
+                )}
               </div>
             ))}
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">
-            No spaces found or still loading...
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <p className="mt-2">No spaces found</p>
+            <p className="text-sm">You may not have access to any spaces or they haven&apos;t loaded yet.</p>
           </div>
         )}
       </div>
@@ -145,9 +111,25 @@ export default function ConfluencePanel() {
         </p>
       </div>
 
-      {error && (
+      <AuthStatus 
+        service="confluence"
+        isConnected={authState.isAuthenticated}
+        onDisconnect={handleDisconnect}
+      />
+
+      {authState.error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
-          {error}
+          <div className="flex justify-between items-start">
+            <span>{authState.error}</span>
+            <button
+              onClick={clearError}
+              className="text-red-700 hover:text-red-900 ml-2"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
@@ -177,91 +159,17 @@ export default function ConfluencePanel() {
         </div>
 
         {authMethod === 'oauth' ? (
-          <div>
-            <h3 className="text-lg font-medium mb-4">OAuth 2.0 Authentication</h3>
-            <p className="text-gray-600 mb-6">
-              The most secure way to connect. You&apos;ll be redirected to Atlassian to authorize access.
-            </p>
-            <button
-              onClick={handleOAuthConnect}
-              disabled={isLoading}
-              className="button button-primary"
-            >
-              {isLoading ? 'Connecting...' : 'Connect with Confluence'}
-            </button>
-          </div>
+          <OAuthPanel 
+            service="confluence"
+            onSuccess={handleAuthSuccess}
+            onError={handleAuthError}
+          />
         ) : (
-          <div>
-            <h3 className="text-lg font-medium mb-4">API Token Authentication</h3>
-            <form onSubmit={handleTokenAuth} className="space-y-4">
-              <div className="form-group">
-                <label htmlFor="domain" className="form-label">
-                  Confluence Domain
-                </label>
-                <input
-                  type="text"
-                  id="domain"
-                  name="domain"
-                  value={formData.domain}
-                  onChange={handleInputChange}
-                  placeholder="your-company.atlassian.net"
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="email" className="form-label">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="your-email@company.com"
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="apiToken" className="form-label">
-                  API Token
-                </label>
-                <input
-                  type="password"
-                  id="apiToken"
-                  name="apiToken"
-                  value={formData.apiToken}
-                  onChange={handleInputChange}
-                  placeholder="Your Confluence API token"
-                  className="form-input"
-                  required
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Get your API token from{' '}
-                  <a
-                    href="https://id.atlassian.com/manage-profile/security/api-tokens"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    Atlassian Account Settings
-                  </a>
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="button button-primary"
-              >
-                {isLoading ? 'Connecting...' : 'Connect with API Token'}
-              </button>
-            </form>
-          </div>
+          <ApiTokenForm 
+            service="confluence"
+            onSuccess={handleAuthSuccess}
+            onError={handleAuthError}
+          />
         )}
       </div>
     </div>

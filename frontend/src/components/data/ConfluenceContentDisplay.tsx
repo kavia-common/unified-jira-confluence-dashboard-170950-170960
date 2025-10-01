@@ -1,6 +1,6 @@
 'use client';
 
-import { ConfluenceContent } from '../../hooks/useConfluenceData';
+import { ConfluenceContent } from '../../services/api';
 import Loading from '../Loading';
 
 interface ConfluenceContentDisplayProps {
@@ -181,7 +181,14 @@ export default function ConfluenceContentDisplay({
                       {item.status}
                     </span>
                     <span className="content-type">{item.type}</span>
-                    <span className="content-space">{item.space.name}</span>
+                    {item.space && (
+                      <span className="content-space">{item.space.name}</span>
+                    )}
+                    {item.history?.createdDate && (
+                      <span className="content-date">
+                        {new Date(item.history.createdDate).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

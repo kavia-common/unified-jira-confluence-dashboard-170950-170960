@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ConfluenceSpace } from '../../hooks/useConfluenceData';
+import { ConfluenceSpace } from '../../services/api';
 import Loading from '../Loading';
 
 interface ConfluenceSpaceDisplayProps {

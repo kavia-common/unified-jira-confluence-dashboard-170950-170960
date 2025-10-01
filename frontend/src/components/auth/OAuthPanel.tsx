@@ -1,47 +1,38 @@
 'use client';
 
 import { useState } from 'react';
-
-import { type AuthCredentials } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface OAuthPanelProps {
   service: 'jira' | 'confluence';
-  onSuccess: (data: AuthCredentials) => void;
-  onError: (error: string) => void;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
 }
 
 // PUBLIC_INTERFACE
 export default function OAuthPanel({ service, onSuccess, onError }: OAuthPanelProps) {
   /**
    * OAuth panel component for handling OAuth 2.0 authentication flows
-   * for Jira and Confluence services.
-   * Note: onSuccess is used by the parent component after OAuth redirect completes.
+   * for Jira and Confluence services using the new auth context.
    */
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Suppress unused vars warning - onSuccess is used by parent after OAuth callback
-  void onSuccess;
+  const auth = useAuth();
 
   const handleOAuthConnect = async () => {
     setIsLoading(true);
     
     try {
-      // Use the backend API endpoint directly
-      const response = await fetch(`https://vscode-internal-17271-beta.beta01.cloud.kavia.ai:3001/auth/${service}/oauth/start`);
-      const data = await response.json();
-      
-      if (data.auth_url) {
-        // Store the OAuth state for validation when returning
-        localStorage.setItem(`${service}_oauth_state`, data.state);
-        // Redirect to OAuth provider
-        window.location.href = data.auth_url;
-        // Note: onSuccess will be called by the useAuth hook after OAuth callback
+      if (service === 'jira') {
+        await auth.loginJiraWithOAuth();
       } else {
-        throw new Error('No authorization URL received');
+        await auth.loginConfluenceWithOAuth();
       }
+      
+      // Success callback
+      onSuccess?.();
     } catch (err) {
-      const errorMessage = `Failed to start ${service} OAuth flow`;
-      onError(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : `Failed to start ${service} OAuth flow`;
+      onError?.(errorMessage);
       console.error('OAuth error:', err);
     } finally {
       setIsLoading(false);

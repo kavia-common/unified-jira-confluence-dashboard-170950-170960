@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { JiraProject } from '../../hooks/useJiraData';
+import { JiraProject } from '../../services/api';
 import Loading from '../Loading';
 
 interface JiraProjectDisplayProps {
@@ -177,15 +177,40 @@ export default function JiraProjectDisplay({
                       <span className="expanded-label">Type:</span>
                       <span className="expanded-value">{project.projectTypeKey}</span>
                     </div>
-                    {project.lead && (
+                    <div className="expanded-item">
+                      <span className="expanded-label">Style:</span>
+                      <span className="expanded-value">{project.style}</span>
+                    </div>
+                    <div className="expanded-item">
+                      <span className="expanded-label">Simplified:</span>
+                      <span className="expanded-value">{project.simplified ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div className="expanded-item">
+                      <span className="expanded-label">Private:</span>
+                      <span className="expanded-value">{project.isPrivate ? 'Yes' : 'No'}</span>
+                    </div>
+                    {project.url && (
+                      <div className="expanded-item">
+                        <span className="expanded-label">URL:</span>
+                        <a 
+                          href={project.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="expanded-value text-blue-600 hover:underline"
+                        >
+                          View Project
+                        </a>
+                      </div>
+                    )}
+                    {project.projectCategory && (
                       <>
                         <div className="expanded-item">
-                          <span className="expanded-label">Lead:</span>
-                          <span className="expanded-value">{project.lead.displayName}</span>
+                          <span className="expanded-label">Category:</span>
+                          <span className="expanded-value">{project.projectCategory.name}</span>
                         </div>
                         <div className="expanded-item">
-                          <span className="expanded-label">Email:</span>
-                          <span className="expanded-value">{project.lead.emailAddress}</span>
+                          <span className="expanded-label">Category Description:</span>
+                          <span className="expanded-value">{project.projectCategory.description}</span>
                         </div>
                       </>
                     )}

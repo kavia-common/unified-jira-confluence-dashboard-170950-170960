@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { APITokenRequest } from '../../services/api';
 
 interface ApiTokenFormData {
   domain: string;
@@ -8,19 +10,17 @@ interface ApiTokenFormData {
   apiToken: string;
 }
 
-import { type AuthCredentials } from '../../hooks/useAuth';
-
 interface ApiTokenFormProps {
   service: 'jira' | 'confluence';
-  onSuccess: (data: AuthCredentials) => void;
-  onError: (error: string) => void;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
 }
 
 // PUBLIC_INTERFACE
 export default function ApiTokenForm({ service, onSuccess, onError }: ApiTokenFormProps) {
   /**
    * API token authentication form component for Jira and Confluence services.
-   * Handles form validation, submission, and error states.
+   * Handles form validation, submission, and error states using the new auth context.
    */
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<ApiTokenFormData>({
@@ -29,6 +29,7 @@ export default function ApiTokenForm({ service, onSuccess, onError }: ApiTokenFo
     apiToken: ''
   });
   const [validationErrors, setValidationErrors] = useState<Partial<ApiTokenFormData>>({});
+  const auth = useAuth();
 
   const validateForm = (): boolean => {
     const errors: Partial<ApiTokenFormData> = {};
@@ -81,26 +82,23 @@ export default function ApiTokenForm({ service, onSuccess, onError }: ApiTokenFo
     setIsLoading(true);
 
     try {
-      // Use the backend API endpoint directly
-      const response = await fetch(`https://vscode-internal-17271-beta.beta01.cloud.kavia.ai:3001/auth/${service}/api-token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies for session management
-        body: JSON.stringify(formData),
-      });
+      const credentials: APITokenRequest = {
+        domain: formData.domain,
+        email: formData.email,
+        api_token: formData.apiToken,
+      };
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        onSuccess(data);
+      if (service === 'jira') {
+        await auth.loginJiraWithToken(credentials);
       } else {
-        throw new Error(data.message || 'Authentication failed');
+        await auth.loginConfluenceWithToken(credentials);
       }
+
+      // Success callback
+      onSuccess?.();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Authentication failed. Please check your credentials.';
-      onError(errorMessage);
+      onError?.(errorMessage);
       console.error('Token auth error:', err);
     } finally {
       setIsLoading(false);

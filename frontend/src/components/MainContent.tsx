@@ -1,30 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import JiraPanel from './JiraPanel';
 import ConfluencePanel from './ConfluencePanel';
 import WelcomePanel from './WelcomePanel';
-
-type ConnectorType = 'jira' | 'confluence' | null;
+import { useApp } from '../contexts/AppContext';
 
 // PUBLIC_INTERFACE
 export default function MainContent() {
-  const [activeConnector, setActiveConnector] = useState<ConnectorType>(null);
-
-  useEffect(() => {
-    const handleConnectorSelected = (event: CustomEvent) => {
-      setActiveConnector(event.detail.connector);
-    };
-
-    window.addEventListener('connectorSelected', handleConnectorSelected as EventListener);
-
-    return () => {
-      window.removeEventListener('connectorSelected', handleConnectorSelected as EventListener);
-    };
-  }, []);
+  /**
+   * Main content component that displays the appropriate panel based on selected service.
+   * Uses the app context to determine which service panel to show.
+   */
+  const app = useApp();
 
   const renderContent = () => {
-    switch (activeConnector) {
+    switch (app.state.ui.selectedService) {
       case 'jira':
         return <JiraPanel />;
       case 'confluence':

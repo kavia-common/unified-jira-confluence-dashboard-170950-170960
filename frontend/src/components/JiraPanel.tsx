@@ -5,49 +5,55 @@ import OAuthPanel from './auth/OAuthPanel';
 import ApiTokenForm from './auth/ApiTokenForm';
 import AuthStatus from './auth/AuthStatus';
 import { JiraProjectDisplay } from './data';
-import { useAuth, AuthCredentials } from '../hooks/useAuth';
-import { useJiraData } from '../hooks/useJiraData';
+import { useAuth } from '../contexts/AuthContext';
+import { useApp } from '../contexts/AppContext';
 
 // PUBLIC_INTERFACE
 export default function JiraPanel() {
   /**
    * Jira panel component that handles authentication and displays project data.
-   * Uses the new authentication components and state management hooks.
+   * Uses the new authentication and app contexts for state management.
    */
   const [authMethod, setAuthMethod] = useState<'oauth' | 'token'>('oauth');
-  const { authState, login, logout, clearError } = useAuth('jira');
-  const { projects, isLoading: projectsLoading, error: dataError, fetchProjects } = useJiraData();
+  const auth = useAuth();
+  const app = useApp();
 
-  const handleAuthSuccess = async (data: AuthCredentials) => {
+  const handleAuthSuccess = async () => {
     try {
-      await login('jira', data);
-      await fetchProjects();
+      // Load Jira projects after successful authentication
+      await app.loadJiraProjects();
     } catch (error) {
-      console.error('Authentication success handler error:', error);
+      console.error('Failed to load projects after authentication:', error);
     }
   };
 
   const handleAuthError = (error: string) => {
     console.error('Authentication error:', error);
-    // Error is automatically handled by the auth components
+    app.addNotification({
+      type: 'error',
+      title: 'Authentication Failed',
+      message: error,
+      duration: 5000,
+    });
   };
 
   const handleDisconnect = async () => {
     try {
-      await logout('jira');
+      await auth.logoutJira();
+      app.resetJiraData();
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
-  // Fetch projects when authenticated
+  // Load projects when authenticated
   useEffect(() => {
-    if (authState.isAuthenticated && projects.length === 0) {
-      fetchProjects();
+    if (auth.state.jira.isAuthenticated && app.state.jira.projects.length === 0) {
+      app.loadJiraProjects();
     }
-  }, [authState.isAuthenticated, projects.length, fetchProjects]);
+  }, [auth.state.jira.isAuthenticated, app.state.jira.projects.length, app]);
 
-  if (authState.isAuthenticated) {
+  if (auth.state.jira.isAuthenticated) {
     return (
       <div className="content-card">
         <div className="card-header">
@@ -63,16 +69,16 @@ export default function JiraPanel() {
 
         <AuthStatus 
           service="jira"
-          isConnected={authState.isAuthenticated}
-          userInfo={authState.user || undefined}
+          isConnected={auth.state.jira.isAuthenticated}
+          userInfo={auth.state.jira.user || undefined}
           onDisconnect={handleDisconnect}
         />
 
         <JiraProjectDisplay
-          projects={projects}
-          isLoading={projectsLoading}
-          error={dataError}
-          onRefresh={fetchProjects}
+          projects={app.state.jira.projects}
+          isLoading={app.state.jira.isLoading}
+          error={app.state.jira.error}
+          onRefresh={app.loadJiraProjects}
         />
       </div>
     );
@@ -89,16 +95,16 @@ export default function JiraPanel() {
 
       <AuthStatus 
         service="jira"
-        isConnected={authState.isAuthenticated}
+        isConnected={auth.state.jira.isAuthenticated}
         onDisconnect={handleDisconnect}
       />
 
-      {authState.error && (
+      {auth.state.jira.error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
           <div className="flex justify-between items-start">
-            <span>{authState.error}</span>
+            <span>{auth.state.jira.error}</span>
             <button
-              onClick={clearError}
+              onClick={auth.clearJiraError}
               className="text-red-700 hover:text-red-900 ml-2"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,29 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useApp } from '../contexts/AppContext';
 
 interface SidebarProps {
   isMobileOpen: boolean;
   onCloseMobile: () => void;
 }
 
-type ConnectorType = 'jira' | 'confluence' | null;
-
 // PUBLIC_INTERFACE
 export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
-  const [activeConnector, setActiveConnector] = useState<ConnectorType>(null);
+  /**
+   * Sidebar component with service selection using the app context.
+   * Manages the selection of Jira and Confluence services.
+   */
+  const app = useApp();
 
-  const handleConnectorSelect = (connector: ConnectorType) => {
-    setActiveConnector(connector);
+  const handleConnectorSelect = (connector: 'jira' | 'confluence' | null) => {
+    app.selectService(connector);
+    
     // Close mobile menu when item is selected
     if (window.innerWidth <= 768) {
       onCloseMobile();
     }
-    
-    // Dispatch custom event to notify main content area
-    window.dispatchEvent(new CustomEvent('connectorSelected', { 
-      detail: { connector } 
-    }));
   };
 
   return (
@@ -39,19 +37,29 @@ export default function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
 
       <nav className="sidebar-nav">
         <button
-          className={`nav-item ${activeConnector === 'jira' ? 'active' : ''}`}
+          className={`nav-item ${app.state.ui.selectedService === 'jira' ? 'active' : ''}`}
           onClick={() => handleConnectorSelect('jira')}
         >
           <JiraIcon className="nav-item-icon" />
           <span>Jira</span>
+          {app.state.jira.projects.length > 0 && (
+            <span className="ml-auto text-xs bg-green-500 text-white rounded-full px-2 py-1">
+              {app.state.jira.projects.length}
+            </span>
+          )}
         </button>
 
         <button
-          className={`nav-item ${activeConnector === 'confluence' ? 'active' : ''}`}
+          className={`nav-item ${app.state.ui.selectedService === 'confluence' ? 'active' : ''}`}
           onClick={() => handleConnectorSelect('confluence')}
         >
           <ConfluenceIcon className="nav-item-icon" />
           <span>Confluence</span>
+          {app.state.confluence.spaces.length > 0 && (
+            <span className="ml-auto text-xs bg-green-500 text-white rounded-full px-2 py-1">
+              {app.state.confluence.spaces.length}
+            </span>
+          )}
         </button>
       </nav>
     </aside>

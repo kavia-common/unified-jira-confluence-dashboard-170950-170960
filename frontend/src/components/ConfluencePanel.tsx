@@ -5,38 +5,44 @@ import OAuthPanel from './auth/OAuthPanel';
 import ApiTokenForm from './auth/ApiTokenForm';
 import AuthStatus from './auth/AuthStatus';
 import { ConfluenceSpaceDisplay, ConfluenceContentDisplay } from './data';
-import { useAuth, type AuthCredentials } from '../hooks/useAuth';
-import { useConfluenceData } from '../hooks/useConfluenceData';
+import { useAuth } from '../contexts/AuthContext';
+import { useApp } from '../contexts/AppContext';
 
 // PUBLIC_INTERFACE
 export default function ConfluencePanel() {
   /**
    * Confluence panel component that handles authentication and displays space data.
-   * Uses the new authentication components and state management hooks.
+   * Uses the new authentication and app contexts for state management.
    */
   const [authMethod, setAuthMethod] = useState<'oauth' | 'token'>('oauth');
   const [selectedSpaceKey, setSelectedSpaceKey] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'spaces' | 'content'>('spaces');
-  const { authState, login, logout, clearError } = useAuth('confluence');
-  const { spaces, content, isLoading: spacesLoading, error: dataError, fetchSpaces, fetchSpaceContent } = useConfluenceData();
+  const auth = useAuth();
+  const app = useApp();
 
-  const handleAuthSuccess = async (data: AuthCredentials) => {
+  const handleAuthSuccess = async () => {
     try {
-      await login('confluence', data);
-      await fetchSpaces();
+      // Load Confluence spaces after successful authentication
+      await app.loadConfluenceSpaces();
     } catch (error) {
-      console.error('Authentication success handler error:', error);
+      console.error('Failed to load spaces after authentication:', error);
     }
   };
 
   const handleAuthError = (error: string) => {
     console.error('Authentication error:', error);
-    // Error is automatically handled by the auth components
+    app.addNotification({
+      type: 'error',
+      title: 'Authentication Failed',
+      message: error,
+      duration: 5000,
+    });
   };
 
   const handleDisconnect = async () => {
     try {
-      await logout('confluence');
+      await auth.logoutConfluence();
+      app.resetConfluenceData();
       setSelectedSpaceKey(null);
       setViewMode('spaces');
     } catch (error) {
@@ -47,7 +53,11 @@ export default function ConfluencePanel() {
   const handleSpaceSelect = async (spaceKey: string) => {
     setSelectedSpaceKey(spaceKey);
     setViewMode('content');
-    await fetchSpaceContent(spaceKey);
+    try {
+      await app.loadConfluenceSpaceContent(spaceKey);
+    } catch (error) {
+      console.error('Failed to load space content:', error);
+    }
   };
 
   const handleBackToSpaces = () => {
@@ -55,14 +65,14 @@ export default function ConfluencePanel() {
     setViewMode('spaces');
   };
 
-  // Fetch spaces when authenticated
+  // Load spaces when authenticated
   useEffect(() => {
-    if (authState.isAuthenticated && spaces.length === 0) {
-      fetchSpaces();
+    if (auth.state.confluence.isAuthenticated && app.state.confluence.spaces.length === 0) {
+      app.loadConfluenceSpaces();
     }
-  }, [authState.isAuthenticated, spaces.length, fetchSpaces]);
+  }, [auth.state.confluence.isAuthenticated, app.state.confluence.spaces.length, app]);
 
-  if (authState.isAuthenticated) {
+  if (auth.state.confluence.isAuthenticated) {
     return (
       <div className="content-card">
         <div className="card-header">
@@ -78,24 +88,24 @@ export default function ConfluencePanel() {
 
         <AuthStatus 
           service="confluence"
-          isConnected={authState.isAuthenticated}
-          userInfo={authState.user || undefined}
+          isConnected={auth.state.confluence.isAuthenticated}
+          userInfo={auth.state.confluence.user || undefined}
           onDisconnect={handleDisconnect}
         />
 
         {viewMode === 'spaces' ? (
           <ConfluenceSpaceDisplay
-            spaces={spaces}
-            isLoading={spacesLoading}
-            error={dataError}
-            onRefresh={fetchSpaces}
+            spaces={app.state.confluence.spaces}
+            isLoading={app.state.confluence.isLoading}
+            error={app.state.confluence.error}
+            onRefresh={app.loadConfluenceSpaces}
             onSpaceSelect={handleSpaceSelect}
           />
         ) : (
           <ConfluenceContentDisplay
-            content={content}
-            isLoading={spacesLoading}
-            error={dataError}
+            content={app.state.confluence.spaceContent}
+            isLoading={app.state.confluence.isLoading}
+            error={app.state.confluence.error}
             spaceKey={selectedSpaceKey || undefined}
             onBack={handleBackToSpaces}
           />
@@ -115,16 +125,16 @@ export default function ConfluencePanel() {
 
       <AuthStatus 
         service="confluence"
-        isConnected={authState.isAuthenticated}
+        isConnected={auth.state.confluence.isAuthenticated}
         onDisconnect={handleDisconnect}
       />
 
-      {authState.error && (
+      {auth.state.confluence.error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
           <div className="flex justify-between items-start">
-            <span>{authState.error}</span>
+            <span>{auth.state.confluence.error}</span>
             <button
-              onClick={clearError}
+              onClick={auth.clearConfluenceError}
               className="text-red-700 hover:text-red-900 ml-2"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
